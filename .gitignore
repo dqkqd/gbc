@@ -1,0 +1,6 @@
+.direnv/
+build/
+build_debug/
+.cache/
+compile_commands.json
+logs/
