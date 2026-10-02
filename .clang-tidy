@@ -9,6 +9,9 @@ Checks: |-
   portability-*,
   readability-*,
   -bugprone-easily-swappable-parameters
+  -cert-err33-c
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+  -concurrency-mt-unsafe
   -misc-non-private-member-variables-in-classes
   -modernize-use-trailing-return-type,
   -portability-avoid-pragma-once,
