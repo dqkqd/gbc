@@ -272,13 +272,13 @@ void cpu_swap(Cpu *cpu, uint8_t *v) {
 }
 
 void cpu_bit(uint8_t n, Cpu *cpu, uint8_t v) {
-  cpu->reg.flags.z = ((v >> n) & 1) != 0;
+  cpu->reg.flags.z = ((v >> n) & 1) == 0;
   cpu->reg.flags.n = false;
   cpu->reg.flags.h = true;
 }
 
 void cpu_res(uint8_t n, uint8_t *v) {
-  uint8_t mask = ~1 << n;
+  uint8_t mask = 1 << n;
   *v = *v & (~mask);
 }
 
