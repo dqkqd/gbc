@@ -16,10 +16,10 @@ run:
     cmake --build build --target gb
     ./build/gb
 
-run_debug:
+run_debug path:
     cmake -B build_debug -DCMAKE_BUILD_TYPE=Debug
     cmake --build build_debug --target gb
-    ./build_debug/gb
+    ./build_debug/gb {{ path }}
 
 clean:
     rm -rf build

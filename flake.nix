@@ -23,6 +23,7 @@
             cmake-language-server
             hexyl
             uv
+            lldb
           ];
         };
       }
