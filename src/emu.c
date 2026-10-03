@@ -1010,6 +1010,42 @@ void decode(Emu *emu, Opcode *opcode) { // NOLINT
     opcode->e8 = read_i8(emu);
     break;
   }
+  case 0xd9: {
+    opcode->kind = OPCODE_KIND_0xd9_RETI;
+    break;
+  }
+  case 0xc7: {
+    opcode->kind = OPCODE_KIND_0xc7_RST_0x00;
+    break;
+  }
+  case 0xd7: {
+    opcode->kind = OPCODE_KIND_0xd7_RST_0x10;
+    break;
+  }
+  case 0xe7: {
+    opcode->kind = OPCODE_KIND_0xe7_RST_0x20;
+    break;
+  }
+  case 0xf7: {
+    opcode->kind = OPCODE_KIND_0xf7_RST_0x30;
+    break;
+  }
+  case 0xcf: {
+    opcode->kind = OPCODE_KIND_0xcf_RST_0x08;
+    break;
+  }
+  case 0xdf: {
+    opcode->kind = OPCODE_KIND_0xdf_RST_0x18;
+    break;
+  }
+  case 0xef: {
+    opcode->kind = OPCODE_KIND_0xef_RST_0x28;
+    break;
+  }
+  case 0xff: {
+    opcode->kind = OPCODE_KIND_0xff_RST_0x38;
+    break;
+  }
   case 0xcb: {
     opcode->kind = OPCODE_KIND_0xcb_PREFIX;
     uint8_t prefix = read_u8(emu);
@@ -3032,11 +3068,48 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
   }
   case OPCODE_KIND_0xe8_ADD_SP_e8: {
     cpu_add_sp_e8(&emu->cpu, opcode->e8);
-    break;
+    return 16;
   }
   case OPCODE_KIND_0xf8_LD_HL_SP_e8: {
     cpu_ld_hl_sp_e8(&emu->cpu, opcode->e8);
-    break;
+    return 12;
+  }
+  case OPCODE_KIND_0xd9_RETI: {
+    cpu_ret(&emu->cpu, &emu->mem);
+    emu->cpu.ime = true;
+    return 16;
+  }
+  case OPCODE_KIND_0xc7_RST_0x00: {
+    cpu_call(&emu->cpu, &emu->mem, 0x00);
+    return 16;
+  }
+  case OPCODE_KIND_0xd7_RST_0x10: {
+    cpu_call(&emu->cpu, &emu->mem, 0x10);
+    return 16;
+  }
+  case OPCODE_KIND_0xe7_RST_0x20: {
+    cpu_call(&emu->cpu, &emu->mem, 0x20);
+    return 16;
+  }
+  case OPCODE_KIND_0xf7_RST_0x30: {
+    cpu_call(&emu->cpu, &emu->mem, 0x30);
+    return 16;
+  }
+  case OPCODE_KIND_0xcf_RST_0x08: {
+    cpu_call(&emu->cpu, &emu->mem, 0x08);
+    return 16;
+  }
+  case OPCODE_KIND_0xdf_RST_0x18: {
+    cpu_call(&emu->cpu, &emu->mem, 0x18);
+    return 16;
+  }
+  case OPCODE_KIND_0xef_RST_0x28: {
+    cpu_call(&emu->cpu, &emu->mem, 0x28);
+    return 16;
+  }
+  case OPCODE_KIND_0xff_RST_0x38: {
+    cpu_call(&emu->cpu, &emu->mem, 0x38);
+    return 16;
   }
   case OPCODE_KIND_0xcb_PREFIX: {
     switch (opcode->prefix) {
