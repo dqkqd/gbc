@@ -249,7 +249,7 @@ void cpu_sla(Cpu *cpu, uint8_t *v) {
 
 void cpu_sra(Cpu *cpu, uint8_t *v) {
   cpu->reg.flags.c = (*v & 1) != 0;
-  *v = (*v >> 1) | (*v & 0x70);
+  *v = (*v >> 1) | (*v & 0x80);
   cpu->reg.flags.z = *v == 0;
   cpu->reg.flags.n = false;
   cpu->reg.flags.h = false;
@@ -264,7 +264,7 @@ void cpu_srl(Cpu *cpu, uint8_t *v) {
 }
 
 void cpu_swap(Cpu *cpu, uint8_t *v) {
-  *v = (*v >> 8) | (*v << 8);
+  *v = (*v >> 4) | (*v << 4);
   cpu->reg.flags.z = *v == 0;
   cpu->reg.flags.n = false;
   cpu->reg.flags.h = false;
@@ -334,4 +334,21 @@ void cpu_add_sp_e8(Cpu *cpu, int8_t v) { cpu->reg.sp = add_sp_e8(cpu, v); }
 
 void cpu_ld_hl_sp_e8(Cpu *cpu, int8_t v) {
   reg_set_hl(&cpu->reg, add_sp_e8(cpu, v));
+}
+
+void cpu_cpl(Cpu *cpu) {
+  cpu->reg.a = ~cpu->reg.a;
+  cpu->reg.flags.n = true;
+  cpu->reg.flags.h = true;
+}
+
+void cpu_ccf(Cpu *cpu) {
+  cpu->reg.flags.n = false;
+  cpu->reg.flags.h = false;
+  cpu->reg.flags.c = (!cpu->reg.flags.c) != 0;
+}
+void cpu_scf(Cpu *cpu) {
+  cpu->reg.flags.n = false;
+  cpu->reg.flags.h = false;
+  cpu->reg.flags.c = true;
 }

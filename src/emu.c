@@ -1046,6 +1046,18 @@ void decode(Emu *emu, Opcode *opcode) { // NOLINT
     opcode->kind = OPCODE_KIND_0xff_RST_0x38;
     break;
   }
+  case 0x2f: {
+    opcode->kind = OPCODE_KIND_0x2f_CPL;
+    break;
+  }
+  case 0x3f: {
+    opcode->kind = OPCODE_KIND_0x3f_CCF;
+    break;
+  }
+  case 0x37: {
+    opcode->kind = OPCODE_KIND_0x37_SCF;
+    break;
+  }
   case 0xcb: {
     opcode->kind = OPCODE_KIND_0xcb_PREFIX;
     uint8_t prefix = read_u8(emu);
@@ -3110,6 +3122,18 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
   case OPCODE_KIND_0xff_RST_0x38: {
     cpu_call(&emu->cpu, &emu->mem, 0x38);
     return 16;
+  }
+  case OPCODE_KIND_0x2f_CPL: {
+    cpu_cpl(&emu->cpu);
+    return 4;
+  }
+  case OPCODE_KIND_0x3f_CCF: {
+    cpu_ccf(&emu->cpu);
+    return 4;
+  }
+  case OPCODE_KIND_0x37_SCF: {
+    cpu_scf(&emu->cpu);
+    return 4;
   }
   case OPCODE_KIND_0xcb_PREFIX: {
     switch (opcode->prefix) {

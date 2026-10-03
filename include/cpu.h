@@ -74,4 +74,8 @@ void cpu_daa(Cpu *cpu);
 void cpu_add_sp_e8(Cpu *cpu, int8_t v);
 void cpu_ld_hl_sp_e8(Cpu *cpu, int8_t v);
 
+void cpu_cpl(Cpu *cpu);
+void cpu_ccf(Cpu *cpu);
+void cpu_scf(Cpu *cpu);
+
 #endif // !CPU_H
