@@ -71,4 +71,7 @@ void cpu_set(uint8_t n, uint8_t *v);
 void cpu_add_hl(Cpu *cpu, uint16_t v);
 void cpu_daa(Cpu *cpu);
 
+void cpu_add_sp_e8(Cpu *cpu, int8_t v);
+void cpu_ld_hl_sp_e8(Cpu *cpu, int8_t v);
+
 #endif // !CPU_H

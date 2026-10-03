@@ -320,3 +320,18 @@ void cpu_daa(Cpu *cpu) {
   cpu->reg.flags.z = cpu->reg.a == 0;
   cpu->reg.flags.h = false;
 }
+
+static uint16_t add_sp_e8(Cpu *cpu, int8_t v) {
+  uint16_t res = cpu->reg.sp + v;
+  cpu->reg.flags.z = false;
+  cpu->reg.flags.n = false;
+  cpu->reg.flags.h = (res & 0xF) < (cpu->reg.sp & 0xF);
+  cpu->reg.flags.c = (res & 0xFF) < (cpu->reg.sp & 0xFF);
+  return res;
+}
+
+void cpu_add_sp_e8(Cpu *cpu, int8_t v) { cpu->reg.sp = add_sp_e8(cpu, v); }
+
+void cpu_ld_hl_sp_e8(Cpu *cpu, int8_t v) {
+  reg_set_hl(&cpu->reg, add_sp_e8(cpu, v));
+}

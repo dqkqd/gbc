@@ -39,10 +39,10 @@ test path num time: build_test
 
 test01: (test './tests/gb-test-roms/cpu_instrs/individual/01-special.gb' '1' '2') # passed
 test02: (test './tests/gb-test-roms/cpu_instrs/individual/02-interrupts.gb' '2' '10')
-test03: (test './tests/gb-test-roms/cpu_instrs/individual/03-op sp,hl.gb' '3' '10') # passed
-test04: (test './tests/gb-test-roms/cpu_instrs/individual/04-op r,imm.gb' '4' '10') # passed
-test05: (test './tests/gb-test-roms/cpu_instrs/individual/05-op rp.gb' '5' '10') # passed
-test06: (test './tests/gb-test-roms/cpu_instrs/individual/06-ld r,r.gb' '6' '5') # passed
+test03: (test './tests/gb-test-roms/cpu_instrs/individual/03-op sp,hl.gb' '3' '2') # passed
+test04: (test './tests/gb-test-roms/cpu_instrs/individual/04-op r,imm.gb' '4' '2') # passed
+test05: (test './tests/gb-test-roms/cpu_instrs/individual/05-op rp.gb' '5' '2') # passed
+test06: (test './tests/gb-test-roms/cpu_instrs/individual/06-ld r,r.gb' '6' '2') # passed
 test07: (test './tests/gb-test-roms/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb' '7' '10') # passed
 test08: (test './tests/gb-test-roms/cpu_instrs/individual/08-misc instrs.gb' '8' '10') # passed
 test09: (test './tests/gb-test-roms/cpu_instrs/individual/09-op r,r.gb' '9' '20') # passed

@@ -991,6 +991,25 @@ void decode(Emu *emu, Opcode *opcode) { // NOLINT
     opcode->kind = OPCODE_KIND_0x27_DAA;
     break;
   }
+  case 0x08: {
+    opcode->kind = OPCODE_KIND_0x08_LD_pa16_SP;
+    opcode->a16 = read_u16(emu);
+    break;
+  }
+  case 0xf9: {
+    opcode->kind = OPCODE_KIND_0xf9_LD_SP_HL;
+    break;
+  }
+  case 0xe8: {
+    opcode->kind = OPCODE_KIND_0xe8_ADD_SP_e8;
+    opcode->e8 = read_i8(emu);
+    break;
+  }
+  case 0xf8: {
+    opcode->kind = OPCODE_KIND_0xf8_LD_HL_SP_e8;
+    opcode->e8 = read_i8(emu);
+    break;
+  }
   case 0xcb: {
     opcode->kind = OPCODE_KIND_0xcb_PREFIX;
     uint8_t prefix = read_u8(emu);
@@ -3002,6 +3021,22 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
   case OPCODE_KIND_0x27_DAA: {
     cpu_daa(&emu->cpu);
     return 4;
+  }
+  case OPCODE_KIND_0x08_LD_pa16_SP: {
+    mem_write_u16(&emu->mem, opcode->a16, emu->cpu.reg.sp);
+    return 20;
+  }
+  case OPCODE_KIND_0xf9_LD_SP_HL: {
+    emu->cpu.reg.sp = reg_hl(&emu->cpu.reg);
+    return 8;
+  }
+  case OPCODE_KIND_0xe8_ADD_SP_e8: {
+    cpu_add_sp_e8(&emu->cpu, opcode->e8);
+    break;
+  }
+  case OPCODE_KIND_0xf8_LD_HL_SP_e8: {
+    cpu_ld_hl_sp_e8(&emu->cpu, opcode->e8);
+    break;
   }
   case OPCODE_KIND_0xcb_PREFIX: {
     switch (opcode->prefix) {
