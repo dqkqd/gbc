@@ -1,0 +1,65 @@
+on: [push, pull_request]
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: install clang-format 21
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+          sudo apt-get install -y clang-format-21
+      - name: format
+        run: clang-format-21 --dry-run -Werror $(git ls-files '*.c' '*.h')
+  tidy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: install clang-format 21
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+          sudo apt-get install -y clang-tidy-21
+      - name: generate compile database
+        run: |
+          cmake -B build
+          cp build/compile_commands.json .
+      - name: tidy
+        run: clang-tidy-21 $(git ls-files '*.c' '*.h')
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: prepare
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGB_TEST=ON
+          cmake --build build --target gb
+          mkdir -p logs
+      - name: tests
+        run: |
+          run_test() {
+            timeout --signal=SIGINT $3 ./build/gb "$1" || true
+            python3 tests/gameboy-doctor/gameboy-doctor ./logs/gameboy_doctor.log cpu_instrs $2
+          }
+
+          run_test './tests/gb-test-roms/cpu_instrs/individual/01-special.gb' 1 2
+          run_test './tests/gb-test-roms/cpu_instrs/individual/02-interrupts.gb' 2 2
+          run_test './tests/gb-test-roms/cpu_instrs/individual/03-op sp,hl.gb' 3 2
+          run_test './tests/gb-test-roms/cpu_instrs/individual/04-op r,imm.gb' 4 2
+          run_test './tests/gb-test-roms/cpu_instrs/individual/05-op rp.gb' 5 2
+          run_test './tests/gb-test-roms/cpu_instrs/individual/06-ld r,r.gb' 6 2
+          run_test './tests/gb-test-roms/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb' 7 4
+          run_test './tests/gb-test-roms/cpu_instrs/individual/08-misc instrs.gb' 8 2
+          run_test './tests/gb-test-roms/cpu_instrs/individual/09-op r,r.gb' 9 6
+          run_test './tests/gb-test-roms/cpu_instrs/individual/10-bit ops.gb' 10 7
+          run_test './tests/gb-test-roms/cpu_instrs/individual/11-op a,(hl).gb' 11 10
