@@ -28,7 +28,7 @@ jobs:
           sudo apt-get install -y clang-tidy-21
       - name: generate compile database
         run: |
-          cmake -B build
+          cmake -B build -DGB_TEST=ON
           cp build/compile_commands.json .
       - name: tidy
         run: clang-tidy-21 $(git ls-files '*.c' '*.h')
