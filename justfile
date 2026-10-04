@@ -2,6 +2,10 @@ build:
     cmake -B build -DCMAKE_BUILD_TYPE=Release
     cmake --build build --target gb
 
+compile_json:
+    cmake -B build_debug -DCMAKE_BUILD_TYPE=Debug -DGB_TEST=ON
+    cp build_debug/compile_commands.json .
+
 format:
     clang-format -i include/**.h src/**.c
 
@@ -27,7 +31,6 @@ clean:
 
 build_test:
     cmake -B build -DCMAKE_BUILD_TYPE=Release -DGB_TEST=ON
-    cp build/compile_commands.json .
     cmake --build build --target gb
 
 gen_opcode:

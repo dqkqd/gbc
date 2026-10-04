@@ -8,7 +8,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(LIB_SOURCES src/mem.c src/cpu.c src/emu.c)
+set(LIB_SOURCES src/mem.c src/cpu.c src/emu.c src/tile.c src/ppu/sdl.c)
 
 add_executable(gb src/main.c ${LIB_SOURCES})
 
