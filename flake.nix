@@ -24,6 +24,15 @@
             hexyl
             uv
             lldb
+
+            # sdl3
+            pkg-config
+            wayland
+            wayland-protocols
+            wayland-scanner
+            libxkbcommon
+            libdecor
+            libglvnd
           ];
         };
       }
