@@ -30,6 +30,11 @@ static inline void gb_doctor_log_init() {
 
 static inline void gb_doctor_log_close() { fclose(gb_doctor_log); }
 
+static inline void gb_doctor_log_close_signal(int sig) {
+  gb_doctor_log_close();
+  _Exit(128 + sig);
+}
+
 #define GAMEBOY_DOCTOR(emu)                                                    \
   do {                                                                         \
     fprintf(gb_doctor_log,                                                     \

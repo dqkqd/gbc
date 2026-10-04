@@ -6,6 +6,7 @@
 typedef struct {
   enum {
     OPCODE_KIND_0x00_NOP = 0x00,
+    OPCODE_KIND_0x76_HALT = 0x76,
     OPCODE_KIND_0x27_DAA = 0x27,
     OPCODE_KIND_0x08_LD_pa16_SP = 0x08,
     OPCODE_KIND_0xf9_LD_SP_HL = 0xf9,

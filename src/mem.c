@@ -1,4 +1,5 @@
 #include "mem.h"
+#include "constant.h"
 #include "macro.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -14,6 +15,7 @@ void mem_init(Mem *const mem, FILE *f) {
   }
 
   mem->ram = malloc(0x10000 * sizeof(uint8_t));
+  mem->cycles = 0;
 }
 
 void mem_destroy(Mem *const mem) {
@@ -56,4 +58,45 @@ void mem_write_u16(Mem *mem, uint16_t addr, uint16_t byte) {
   }
   mem->ram[addr] = byte;          // lo
   mem->ram[addr + 1] = byte >> 8; // hi
+}
+
+void mem_tick(Mem *mem, uint8_t t_state_cycle) {
+  if (t_state_cycle == 0) {
+    return;
+  }
+
+  //  https://gbdev.io/pandocs/Timer_and_Divider_Registers.html#ff05--tima-timer-counter
+  uint8_t tac = mem_read_u8(mem, TAC_ADDR);
+  bool enabled = (tac & 0x04) != 0;
+  if (!enabled) {
+    return;
+  }
+
+  static const int clocks[4] = {256, 4, 16, 64};
+  uint16_t clock = clocks[tac & 0x03];
+
+  mem->cycles += t_state_cycle >> 2;
+
+  // lower than clock boundary
+  if (mem->cycles < clock) {
+    return;
+  }
+
+  uint8_t inc = mem->cycles / clock;
+  mem->cycles %= clock;
+
+  uint8_t *tima = mem_ref_u8(mem, TIMA_ADDR);
+  // adding would not cause overflow
+  if (inc <= 0xFF - *tima) {
+    *tima += inc;
+    return;
+  }
+
+  // overflow case, enable interrupt
+  uint8_t *if_ = mem_ref_u8(mem, IF_ADDR);
+  *if_ |= I_TIMER_FLAG;
+
+  // set tima to the correct value
+  uint8_t tma = mem_read_u8(mem, TMA_ADDR);
+  *tima = tma + ((inc - (0xFF - *tima)) % (0xFF - tma));
 }

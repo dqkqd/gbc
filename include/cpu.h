@@ -19,6 +19,12 @@ typedef struct {
 typedef struct {
   Reg reg;
   bool ime;
+
+  bool halted;
+  bool halt_bug;
+
+  // The effect of ei is delayed by one instruction
+  bool ei_waiting;
 } Cpu;
 
 void cpu_init(Cpu *cpu);
@@ -77,5 +83,9 @@ void cpu_ld_hl_sp_e8(Cpu *cpu, int8_t v);
 void cpu_cpl(Cpu *cpu);
 void cpu_ccf(Cpu *cpu);
 void cpu_scf(Cpu *cpu);
+
+uint8_t cpu_interrupt(Cpu *cpu, Mem *mem);
+
+bool cpu_has_interrupt_pending(Mem *mem);
 
 #endif // !CPU_H

@@ -3,6 +3,7 @@
 #include "macro.h"
 #include "mem.h"
 #include "opcode.h"
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +22,7 @@ int emu_init(Emu *emu, const char *rom) {
 #if GB_TEST
   gb_doctor_log_init();
   atexit(gb_doctor_log_close);
+  signal(SIGINT, gb_doctor_log_close_signal); // NOLINT
 #endif
 
   return 0;
@@ -30,7 +32,11 @@ void emu_destroy(Emu *emu) { mem_destroy(&emu->mem); }
 
 static uint8_t read_u8(Emu *emu) {
   uint8_t res = mem_read_u8(&emu->mem, emu->cpu.reg.pc);
-  emu->cpu.reg.pc++;
+  if ((int)emu->cpu.halt_bug) {
+    emu->cpu.halt_bug = false;
+  } else {
+    emu->cpu.reg.pc++;
+  }
   return res;
 }
 
@@ -43,7 +49,6 @@ static uint16_t read_u16(Emu *emu) {
 }
 
 void decode(Emu *emu, Opcode *opcode) { // NOLINT
-  GAMEBOY_DOCTOR(emu);
   uint8_t kind = read_u8(emu);
   switch (kind) {
   case 0x00: {
@@ -1056,6 +1061,10 @@ void decode(Emu *emu, Opcode *opcode) { // NOLINT
   }
   case 0x37: {
     opcode->kind = OPCODE_KIND_0x37_SCF;
+    break;
+  }
+  case 0x76: {
+    opcode->kind = OPCODE_KIND_0x76_HALT;
     break;
   }
   case 0xcb: {
@@ -2555,7 +2564,7 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
     return 4;
   }
   case OPCODE_KIND_0xfb_EI: {
-    emu->cpu.ime = true;
+    emu->cpu.ei_waiting = true;
     return 4;
   }
   case OPCODE_KIND_0xea_LD_pa16_A: {
@@ -3133,6 +3142,12 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
   }
   case OPCODE_KIND_0x37_SCF: {
     cpu_scf(&emu->cpu);
+    return 4;
+  }
+  case OPCODE_KIND_0x76_HALT: {
+    emu->cpu.halted = true;
+    emu->cpu.halt_bug =
+        (bool)(!emu->cpu.ime && (int)cpu_has_interrupt_pending(&emu->mem));
     return 4;
   }
   case OPCODE_KIND_0xcb_PREFIX: {
@@ -4173,8 +4188,32 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
 
 void emu_loop(Emu *emu) {
   Opcode opcode;
+  uint8_t cycle;
+
   while (true) {
+    GAMEBOY_DOCTOR(emu);
+
+    cycle = cpu_interrupt(&emu->cpu, &emu->mem);
+    mem_tick(&emu->mem, cycle);
+
+    if (emu->cpu.ei_waiting) {
+      emu->cpu.ei_waiting = false;
+      emu->cpu.ime = true;
+    }
+
     decode(emu, &opcode);
-    execute(emu, &opcode);
+
+    cycle = execute(emu, &opcode);
+    // not halt, normal tick
+    if (!emu->cpu.halted) {
+      mem_tick(&emu->mem, cycle);
+      continue;
+    }
+
+    // halt!
+    while ((int)emu->cpu.halted && !cpu_has_interrupt_pending(&emu->mem)) {
+      mem_tick(&emu->mem, 4);
+    }
+    emu->cpu.halted = false;
   }
 }

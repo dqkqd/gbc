@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "constant.h"
 #include "macro.h"
 #include "mem.h"
 #include <stddef.h>
@@ -19,6 +20,9 @@ void cpu_init(Cpu *cpu) {
   cpu->reg.sp = 0XFFFE;
   cpu->reg.pc = 0x0100;
   cpu->ime = false;
+  cpu->ei_waiting = false;
+  cpu->halted = false;
+  cpu->halt_bug = false;
 }
 
 uint8_t reg_f(const Reg *const reg) {
@@ -347,8 +351,55 @@ void cpu_ccf(Cpu *cpu) {
   cpu->reg.flags.h = false;
   cpu->reg.flags.c = (!cpu->reg.flags.c) != 0;
 }
+
 void cpu_scf(Cpu *cpu) {
   cpu->reg.flags.n = false;
   cpu->reg.flags.h = false;
   cpu->reg.flags.c = true;
+}
+
+uint8_t cpu_interrupt(Cpu *cpu, Mem *mem) {
+  if (!cpu->ime) {
+    return 0;
+  }
+
+  uint8_t ie = mem_read_u8(mem, IE_ADDR);
+  uint8_t *if_ = mem_ref_u8(mem, IF_ADDR);
+  uint8_t exec_flag = ie & *if_;
+
+  if (exec_flag & I_VBLANK_FLAG) {
+    cpu->ime = false;
+    *if_ &= ~I_VBLANK_FLAG;
+    cpu_call(cpu, mem, I_VBLANK_ADDR);
+    return 20;
+  }
+  if (exec_flag & I_LCD_FLAG) {
+    cpu->ime = false;
+    *if_ &= ~I_LCD_FLAG;
+    cpu_call(cpu, mem, I_STAT_ADDR);
+    return 20;
+  }
+  if (exec_flag & I_TIMER_FLAG) {
+    cpu->ime = false;
+    *if_ &= ~I_TIMER_FLAG;
+    cpu_call(cpu, mem, I_TIMER_ADDR);
+    return 20;
+  }
+  if (exec_flag & I_SERIAL_FLAG) {
+    cpu->ime = false;
+    *if_ &= ~I_SERIAL_FLAG;
+    cpu_call(cpu, mem, I_SERIAL_ADDR);
+    return 20;
+  }
+  if (exec_flag & I_JOYPAD_FLAG) {
+    cpu->ime = false;
+    *if_ &= ~I_JOYPAD_FLAG;
+    cpu_call(cpu, mem, I_JOYPAD_ADDR);
+    return 20;
+  }
+  return 0;
+}
+
+bool cpu_has_interrupt_pending(Mem *mem) {
+  return (mem_read_u8(mem, IE_ADDR) & mem_read_u8(mem, IF_ADDR)) != 0;
 }
