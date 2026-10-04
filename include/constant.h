@@ -7,7 +7,7 @@ typedef struct {
   uint8_t r, g, b;
 } Color;
 
-static const Color COLOR_WHILE = {255, 255, 255};
+static const Color COLOR_WHITE = {255, 255, 255};
 
 static const Color color_mapping[4] = {
     {255, 255, 255},
@@ -18,6 +18,11 @@ static const Color color_mapping[4] = {
 
 #define WINDOW_HEIGHT 144
 #define WINDOW_WIDTH 160
+#define WINDOW_SCALE 3
+
+#define SCAN_LINE_START 0
+#define SCAN_LINE_END 153
+#define SCAN_LINE_VBLANK_START 144
 
 #define TILE_MAP_WIDTH 32
 #define TILE_MAP_HEIGHT 32
@@ -27,6 +32,23 @@ static const Color color_mapping[4] = {
 #define TILE_BLOCK0_ADDR 0x8000
 #define TILE_BLOCK1_ADDR 0x9000
 #define TILE_SIZE 16
+
+#define LCD_LY_ADDR 0xFF44
+#define LCD_LYC_ADDR 0xFF45
+#define LCD_STAT_ADDR 0xFF41
+
+#define LCD_WIN_WX_ADDR 0xFF4A
+#define LCD_WIN_WY_ADDR 0xFF4B
+
+#define LCD_BG_SCY_ADDR 0xFF42
+#define LCD_BG_SCX_ADDR 0xFF43
+
+#define LCD_STAT_PPU_MODE_FLAG 3
+#define LCD_STAT_LYC_EQ_LY_FLAG 4
+#define LCD_STAT_MODE_0_SELECT_FLAG 8
+#define LCD_STAT_MODE_1_SELECT_FLAG 16
+#define LCD_STAT_MODE_2_SELECT_FLAG 32
+#define LCD_STAT_LYC_SELECT_FLAG 64
 
 #define LCDC_ADDR 0xFF40
 #define LCDC_BG_WIN_ENABLED_FLAG 1

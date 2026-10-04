@@ -6,8 +6,11 @@
 
 bool tile_color_at(const Tile *tile, int x, int y, Color *color) {
   const uint8_t *row_color_data = tile->data + ((ptrdiff_t)y * 2);
-  uint8_t hi = (*row_color_data >> x) & 1;
-  uint8_t lo = (*(row_color_data + 1) >> x) & 1;
+  // the left most bit contains the color for the smallest x. We need to revert
+  // x.
+  int xpos = 7 - x;
+  uint8_t lo = (*row_color_data >> xpos) & 1;
+  uint8_t hi = (*(row_color_data + 1) >> xpos) & 1;
   *color = color_mapping[(hi << 1) | lo];
   return true;
 }

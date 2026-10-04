@@ -3,10 +3,12 @@
 
 #include "cpu.h"
 #include "mem.h"
+#include "ppu.h"
 
 typedef struct {
   Mem mem;
   Cpu cpu;
+  Ppu ppu;
 } Emu;
 
 int emu_init(Emu *emu, const char *rom);

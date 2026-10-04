@@ -370,12 +370,14 @@ uint8_t cpu_interrupt(Cpu *cpu, Mem *mem) {
   if (exec_flag & I_VBLANK_FLAG) {
     cpu->ime = false;
     *if_ &= ~I_VBLANK_FLAG;
+    DEBUG("Enter vblank interrupt");
     cpu_call(cpu, mem, I_VBLANK_ADDR);
     return 20;
   }
   if (exec_flag & I_LCD_FLAG) {
     cpu->ime = false;
     *if_ &= ~I_LCD_FLAG;
+    DEBUG("Enter vblank interrupt");
     cpu_call(cpu, mem, I_STAT_ADDR);
     return 20;
   }

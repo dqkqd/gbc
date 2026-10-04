@@ -16,10 +16,11 @@ typedef struct {
 
 SDL_AppResult sdl_init(SdlWrapper *sdl);
 
+void sdl_render_clear(SdlWrapper *sdl);
 SDL_AppResult sdl_render(SdlWrapper *sdl);
 
 void sdl_quit(SdlWrapper *sdl);
 
-void sdl_put_color(SdlWrapper *sdl, int x, int y, Color *color);
+void sdl_put_color(const SdlWrapper *sdl, int x, int y, Color *color);
 
 #endif // PPU_SDH_H

@@ -36,6 +36,10 @@ build_test:
 gen_opcode:
     uv run ./codegen/gen.py
 
+test_render: build
+    [ -f dmg-acid2.gb ] || curl -L -o dmg-acid2.gb https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb
+    ./build/gb ./dmg-acid2.gb
+
 test path num time: build_test
     timeout --signal=SIGINT {{ time }} ./build/gb '{{ path }}' || true
     uv run tests/gameboy-doctor/gameboy-doctor ./logs/gameboy_doctor.log cpu_instrs {{ num }}

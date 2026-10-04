@@ -3,6 +3,7 @@
 #include "macro.h"
 #include "mem.h"
 #include "opcode.h"
+#include "ppu.h"
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -17,6 +18,7 @@ int emu_init(Emu *emu, const char *rom) {
 
   cpu_init(&emu->cpu);
   mem_init(&emu->mem, f);
+  ppu_init(&emu->ppu, &emu->mem);
   fclose(f);
 
 #if GB_TEST
@@ -28,7 +30,10 @@ int emu_init(Emu *emu, const char *rom) {
   return 0;
 }
 
-void emu_destroy(Emu *emu) { mem_destroy(&emu->mem); }
+void emu_destroy(Emu *emu) {
+  mem_destroy(&emu->mem);
+  ppu_destroy(&emu->ppu);
+}
 
 static uint8_t read_u8(Emu *emu) {
   uint8_t res = mem_read_u8(&emu->mem, emu->cpu.reg.pc);
@@ -4191,6 +4196,17 @@ void emu_loop(Emu *emu) {
   uint8_t cycle;
 
   while (true) {
+    if (!ppu_step(&emu->ppu)) {
+      return;
+    }
+
+    // halt!
+    if ((int)emu->cpu.halted && !cpu_has_interrupt_pending(&emu->mem)) {
+      mem_tick(&emu->mem, 4);
+      continue;
+    }
+    emu->cpu.halted = false;
+
     GAMEBOY_DOCTOR(emu);
 
     cycle = cpu_interrupt(&emu->cpu, &emu->mem);
@@ -4207,13 +4223,6 @@ void emu_loop(Emu *emu) {
     // not halt, normal tick
     if (!emu->cpu.halted) {
       mem_tick(&emu->mem, cycle);
-      continue;
     }
-
-    // halt!
-    while ((int)emu->cpu.halted && !cpu_has_interrupt_pending(&emu->mem)) {
-      mem_tick(&emu->mem, 4);
-    }
-    emu->cpu.halted = false;
   }
 }
