@@ -65,38 +65,32 @@ void mem_tick(Mem *mem, uint8_t t_state_cycle) {
     return;
   }
 
-  //  https://gbdev.io/pandocs/Timer_and_Divider_Registers.html#ff05--tima-timer-counter
+  // https://gbdev.io/pandocs/Timer_and_Divider_Registers.html#ff05--tima-timer-counter
   uint8_t tac = mem_read_u8(mem, TAC_ADDR);
-  bool enabled = (tac & 0x04) != 0;
+  bool enabled = (tac & TAC_ENABLED_FLAG) != 0;
   if (!enabled) {
     return;
   }
 
   static const int clocks[4] = {256, 4, 16, 64};
-  uint16_t clock = clocks[tac & 0x03];
+  int clock_selected = tac & 0b11;
+  int clock = clocks[clock_selected];
 
-  mem->cycles += t_state_cycle >> 2;
+  for (int i = 0; i < t_state_cycle >> 2; i++) {
+    mem->cycles = (mem->cycles + 1) % clock;
 
-  // lower than clock boundary
-  if (mem->cycles < clock) {
-    return;
+    // added one clock cycle, increment tima
+    if (mem->cycles == 0) {
+      uint8_t *tima = mem_ref_u8(mem, TIMA_ADDR);
+
+      // overflow case, enable interrupt and set *tima to the correct vlaue
+      if (*tima == 0xFF) {
+        uint8_t *if_ = mem_ref_u8(mem, IF_ADDR);
+        *if_ |= I_TIMER_FLAG;
+        *tima = mem_read_u8(mem, TMA_ADDR);
+      } else {
+        *tima = *tima + 1;
+      }
+    }
   }
-
-  uint8_t inc = mem->cycles / clock;
-  mem->cycles %= clock;
-
-  uint8_t *tima = mem_ref_u8(mem, TIMA_ADDR);
-  // adding would not cause overflow
-  if (inc <= 0xFF - *tima) {
-    *tima += inc;
-    return;
-  }
-
-  // overflow case, enable interrupt
-  uint8_t *if_ = mem_ref_u8(mem, IF_ADDR);
-  *if_ |= I_TIMER_FLAG;
-
-  // set tima to the correct value
-  uint8_t tma = mem_read_u8(mem, TMA_ADDR);
-  *tima = tma + ((inc - (0xFF - *tima)) % (0xFF - tma));
 }

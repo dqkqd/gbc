@@ -8,6 +8,8 @@
 #define IE_ADDR 0xFFFF
 #define IF_ADDR 0xFF0F
 
+#define TAC_ENABLED_FLAG 4
+
 #define I_VBLANK_ADDR 0x40
 #define I_STAT_ADDR 0x48
 #define I_TIMER_ADDR 0x50
