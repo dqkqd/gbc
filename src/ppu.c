@@ -18,9 +18,13 @@ void ppu_init(Ppu *ppu, Mem *mem) {
     exit(1);
   };
   ppu->mem = mem;
+  ppu->dots = 0;
   ppu->mode = PPU_MODE_START;
   ppu->scanline = 0;
   ppu->win_y_condition = false;
+
+  // init ly for scanline 0
+  ppu_update_ly(ppu);
 }
 
 void ppu_destroy(Ppu *ppu) { sdl_quit(&ppu->sdl); }
@@ -43,22 +47,19 @@ void ppu_enter_mode(Ppu *ppu, PpuMode mode) {
   *stat = (*stat & 0xFC) | (mode & 0x03);
 
   // check interrupt for ppu mode
-  if (((*stat & LCD_STAT_MODE_0_SELECT_FLAG) != 0 &&
-       ppu->mode == PPU_MODE_HBLANK) ||
-      ((*stat & LCD_STAT_MODE_1_SELECT_FLAG) != 0 &&
-       ppu->mode == PPU_MODE_VBLANK) ||
-      ((*stat & LCD_STAT_MODE_2_SELECT_FLAG) != 0 &&
-       ppu->mode == PPU_MODE_OAM)) {
+  if (((*stat & LCD_STAT_MODE_0_SELECT_FLAG) != 0 && mode == PPU_MODE_HBLANK) ||
+      ((*stat & LCD_STAT_MODE_1_SELECT_FLAG) != 0 && mode == PPU_MODE_VBLANK) ||
+      ((*stat & LCD_STAT_MODE_2_SELECT_FLAG) != 0 && mode == PPU_MODE_OAM)) {
     request_interrupt(ppu->mem, I_LCD_FLAG);
   }
 
   switch (mode) {
   case PPU_MODE_OAM: {
-    ppu_oam_scan(ppu);
+    ppu_oam(ppu);
     break;
   }
   case PPU_MODE_DRAW: {
-    ppu_draw_line_pixels(ppu);
+    ppu_draw(ppu);
     break;
   }
   case PPU_MODE_HBLANK: {
@@ -98,6 +99,17 @@ void ppu_update_ly(Ppu *ppu) {
 }
 
 bool ppu_step(Ppu *ppu, int t_cycle) {
+  uint8_t lcdc = mem_read_u8(ppu->mem, LCDC_ADDR);
+  if ((lcdc & LCDC_PPU_ENABLED_FLAG) == 0) {
+    ppu->dots = 0;
+    ppu->scanline = 0;
+    ppu->win_y_condition = false;
+
+    uint8_t *ly = mem_ref_u8(ppu->mem, LCD_LY_ADDR);
+    *ly = 0;
+    return true;
+  }
+
   ppu->dots += t_cycle;
 
   if (ppu->dots >= PPU_DOTS_PER_LINE) {
@@ -139,7 +151,7 @@ void ppu_put_color(const Ppu *ppu, int x, int y, Color *color) {
   sdl_put_color(&ppu->sdl, x, y, color);
 }
 
-void ppu_oam_scan(Ppu *ppu) {
+void ppu_oam(Ppu *ppu) {
   ppu->oam_scan_result.n_objects = 0;
 
   uint8_t lcdc = mem_read_u8(ppu->mem, LCDC_ADDR);
@@ -253,7 +265,7 @@ UseColor ppu_get_bg_win_color_index(const Ppu *ppu, uint8_t lcdc, int x, int wx,
   return USE_BGP_COLOR;
 }
 
-void ppu_draw_line_pixels(Ppu *ppu) {
+void ppu_draw(Ppu *ppu) {
   Palette obj0_palette;
   Palette obj1_palette;
   Palette bgp_palette;
