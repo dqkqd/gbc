@@ -34,7 +34,7 @@ jobs:
           cmake -B build -DGB_TEST=ON -DGB_RENDER_TEST=ON
           cp build/compile_commands.json .
       - name: tidy
-        run: clang-tidy-21 $(git ls-files '*.c' '*.h')
+        run: clang-tidy-21 -p . $(git ls-files 'src/*.c')
   test:
     runs-on: ubuntu-latest
     permissions:

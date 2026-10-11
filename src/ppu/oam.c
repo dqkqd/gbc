@@ -1,4 +1,9 @@
+#include <stdint.h>
+
+#include "constant.h"
+#include "mem.h"
 #include "ppu/oam.h"
+#include "tile.h"
 
 bool oam_get_obj(const Mem *mem, const uint8_t *oam_ptr, Object *obj,
                  int oam_index, int scanning_line, int object_size) {

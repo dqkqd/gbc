@@ -1,8 +1,11 @@
 #ifndef PPU_OAM_H
 #define PPU_OAM_H
 
-#include "tile.h"
 #include <stdint.h>
+
+#include "constant.h"
+#include "mem.h"
+#include "tile.h"
 
 typedef struct {
   int oam_index; // the position in the oam index, for sort tiebreaker

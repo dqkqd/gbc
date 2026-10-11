@@ -7,13 +7,14 @@ compile_json:
     cp build_debug/compile_commands.json .
 
 format:
-    clang-format -i include/**.h src/**.c
+    clang-format -i $(git ls-files '*.c' '*.h')
 
-check:
-    clang-tidy include/**.h src/**.c
+# headers are checked through the translation units (HeaderFilterRegex)
+check: compile_json
+    clang-tidy -p . $(git ls-files 'src/*.c')
 
-fix:
-    clang-tidy --fix include/**.h src/**.c
+fix: compile_json
+    clang-tidy -p . --fix $(git ls-files 'src/*.c')
 
 run:
     cmake -B build -DCMAKE_BUILD_TYPE=Release
