@@ -56,10 +56,11 @@ void ppu_enter_mode(Ppu *ppu, PpuMode mode) {
 
   switch (mode) {
   case PPU_MODE_OAM: {
-    ppu_oam(ppu);
+    // ppu_oam(ppu);
     break;
   }
   case PPU_MODE_DRAW: {
+    ppu_oam(ppu);
     ppu_draw(ppu);
     break;
   }
