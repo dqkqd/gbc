@@ -23,6 +23,9 @@ bool oam_get_obj(const Mem *mem, const uint8_t *oam_ptr, Object *obj,
   // Byte 2: tile index
   uint8_t tile_index = *(oam_ptr + 2);
 
+  uint8_t tile_index1 = (tile_index & 0xFE);
+  uint8_t tile_index2 = (tile_index & 0xFE) | 1;
+
   // Byte 3: objibute flags
   obj->flags = *(oam_ptr + 3);
 
@@ -33,7 +36,7 @@ bool oam_get_obj(const Mem *mem, const uint8_t *oam_ptr, Object *obj,
   // get the actual tile data and refine the off_y to that tile
   if (object_size == 8) {
     // the data is always in the first half, nothing to worry here
-    get_tile_data_0x8000(mem, tile_index, &obj->tile);
+    get_tile_data_0x8000(mem, tile_index1, &obj->tile);
     obj->off_y = y_flipped ? 7 - off_y : off_y;
   } else {
     // the data can be in the first half or the second half, depends on the
@@ -42,19 +45,19 @@ bool oam_get_obj(const Mem *mem, const uint8_t *oam_ptr, Object *obj,
     if (off_y < 8 && !y_flipped) {
       // trivial: first half
       obj->off_y = off_y;
-      get_tile_data_0x8000(mem, tile_index, &obj->tile);
+      get_tile_data_0x8000(mem, tile_index1, &obj->tile);
     } else if (off_y < 8 && y_flipped) {
       // first half, but flipped to the second half
       obj->off_y = 7 - off_y;
-      get_tile_data_0x8000(mem, tile_index + 1, &obj->tile);
+      get_tile_data_0x8000(mem, tile_index2, &obj->tile);
     } else if (off_y >= 8 && !y_flipped) {
       // trivial: second half
       obj->off_y = off_y - 8;
-      get_tile_data_0x8000(mem, tile_index + 1, &obj->tile);
+      get_tile_data_0x8000(mem, tile_index2, &obj->tile);
     } else {
       // second half but flipped to the first half
       obj->off_y = 15 - off_y;
-      get_tile_data_0x8000(mem, tile_index, &obj->tile);
+      get_tile_data_0x8000(mem, tile_index1, &obj->tile);
     }
   }
 
