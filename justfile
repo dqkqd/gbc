@@ -59,4 +59,5 @@ build_render:
 
 test_render: build_render
     [ -f dmg-acid2.gb ] || curl -L -o dmg-acid2.gb https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb
-    ./build/gb ./dmg-acid2.gb
+    timeout --signal=SIGINT 3 ./build_test/gb ./dmg-acid2.gb || true
+    diff <(magick test_render.bmp rgb:-) <(magick tests/test_render.bmp rgb:-)

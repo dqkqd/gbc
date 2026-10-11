@@ -55,6 +55,6 @@ if(GB_TEST)
 endif()
 
 option(GB_RENDER_TEST "Enable render test mode" OFF)
-if(GB_TEST)
+if(GB_RENDER_TEST)
   target_compile_definitions(gb PRIVATE GB_RENDER_TEST)
 endif()

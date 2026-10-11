@@ -42,9 +42,9 @@ SDL_AppResult sdl_render(SdlWrapper *sdl) {
   SDL_Surface *shot = SDL_RenderReadPixels(sdl->renderer, nullptr);
   if (!shot) {
     SDL_Log("Cannot capture");
-  } else {
-    SDL_SaveBMP(shot, "test_render.bmp");
+    return SDL_APP_FAILURE;
   }
+  SDL_SaveBMP(shot, "test_render.bmp");
 #endif
   return SDL_APP_CONTINUE;
 }

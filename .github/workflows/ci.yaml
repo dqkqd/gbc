@@ -39,6 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      SDL_VIDEODRIVER: dummy
     steps:
       - uses: actions/checkout@v7
         with:
@@ -73,6 +75,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      SDL_VIDEODRIVER: dummy
     steps:
       - uses: actions/checkout@v7
       - name: prepare

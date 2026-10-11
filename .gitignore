@@ -7,3 +7,4 @@ build_dmg/
 compile_commands.json
 logs/
 dmg-acid2.gb
+./test_render.bmp
