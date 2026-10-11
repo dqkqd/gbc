@@ -9,12 +9,18 @@
 #include "ppu/oam.h"
 #include "ppu/sdl.h"
 
+typedef enum {
+  PPU_MODE_OAM,
+  PPU_MODE_DRAW,
+  PPU_MODE_HBLANK,
+  PPU_MODE_VBLANK,
+} PpuMode;
+
 typedef struct {
-  bool running;
   Mem *mem;
   SdlWrapper sdl;
 
-  int mode;                         // 0 1 2 3
+  PpuMode mode;
   int scanline;                     // 0 - 153
   PpuOAMScanResult oam_scan_result; // temporary oam scan result
   bool win_y_condition;

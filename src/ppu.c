@@ -17,9 +17,8 @@ void ppu_init(Ppu *ppu, Mem *mem) {
   if (sdl_init(&ppu->sdl) == SDL_APP_FAILURE) {
     exit(1);
   };
-  ppu->running = true;
   ppu->mem = mem;
-  ppu->mode = 2;
+  ppu->mode = PPU_MODE_OAM;
   ppu->scanline = 0;
   ppu->win_y_condition = false;
 }
@@ -46,8 +45,6 @@ bool ppu_step(Ppu *ppu) {
 
   *stat = (*stat & 0xFC) | (ppu->mode & 0x03);
 
-  DEBUG("PPU Mode %d, scanline %d", ppu->mode, ppu->scanline);
-
   // check interrupt
   if (((*stat & LCD_STAT_MODE_0_SELECT_FLAG) != 0 && ppu->mode == 0) ||
       ((*stat & LCD_STAT_MODE_1_SELECT_FLAG) != 0 && ppu->mode == 1) ||
@@ -59,30 +56,30 @@ bool ppu_step(Ppu *ppu) {
   }
 
   switch (ppu->mode) {
-  case 2: {
+  case PPU_MODE_OAM: {
     ppu_oam_scan(ppu);
-    ppu->mode = 3;
+    ppu->mode = PPU_MODE_DRAW;
     break;
   }
-  case 3: {
+  case PPU_MODE_DRAW: {
     ppu_draw_line_pixels(ppu);
-    ppu->mode = 0;
+    ppu->mode = PPU_MODE_HBLANK;
     break;
   }
-  case 0: {
+  case PPU_MODE_HBLANK: {
     if (ppu->scanline == 143) {
       // vertical blank, set it once!
       uint8_t *if_ = mem_ref_u8(ppu->mem, IF_ADDR);
       *if_ |= I_VBLANK_FLAG;
       ppu->win_y_condition = false;
-      ppu->mode = 1;
+      ppu->mode = PPU_MODE_VBLANK;
     } else {
-      ppu->mode = 2;
+      ppu->mode = PPU_MODE_OAM;
     }
     ppu->scanline++;
     break;
   }
-  case 1: {
+  case PPU_MODE_VBLANK: {
     ppu->scanline++;
     if (ppu->scanline > SCAN_LINE_END) {
       // TODO(khanhdq): this shouldn't be here, it should be after mode 3
@@ -91,7 +88,7 @@ bool ppu_step(Ppu *ppu) {
       }
       ppu_render_clear(ppu);
       ppu->scanline = 0;
-      ppu->mode = 2;
+      ppu->mode = PPU_MODE_OAM;
     }
     break;
   }
