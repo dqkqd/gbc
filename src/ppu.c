@@ -145,7 +145,9 @@ void ppu_oam_scan(Ppu *ppu) {
 
   Object *obj = ppu->oam_scan_result.object_buffer;
   const uint8_t *ptr = mem_ref_u8(ppu->mem, OAM_ADDR);
-  for (int i = 0; i < OAM_MAX_OBJECTS; i++, ptr += 4) {
+  for (int i = 0; i < OAM_MAX_OBJECTS &&
+                  ppu->oam_scan_result.n_objects < OAM_SCANNED_OBJ_LIMIT;
+       i++, ptr += 4) {
     if (oam_get_obj(ppu->mem, ptr, obj, ppu->scanline, object_size)) {
       obj++;
       ppu->oam_scan_result.n_objects++;
