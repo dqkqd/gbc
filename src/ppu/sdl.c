@@ -6,6 +6,7 @@
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_init.h"
 #include "SDL3/SDL_render.h"
+#include "SDL3/SDL_surface.h"
 #include "SDL3/SDL_video.h"
 
 #include "constant.h"
@@ -19,7 +20,7 @@ SDL_AppResult sdl_init(SdlWrapper *sdl) {
 
   if (!SDL_CreateWindowAndRenderer(
           "GB", WINDOW_WIDTH * WINDOW_SCALE, WINDOW_HEIGHT * WINDOW_SCALE,
-          SDL_WINDOW_RESIZABLE, &sdl->window, &sdl->renderer)) {
+          SDL_WINDOW_ALWAYS_ON_TOP, &sdl->window, &sdl->renderer)) {
     SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
     return SDL_APP_FAILURE;
   }
@@ -36,6 +37,14 @@ SDL_AppResult sdl_render(SdlWrapper *sdl) {
     }
   }
   SDL_RenderPresent(sdl->renderer);
+#ifdef GB_RENDER_TEST
+  SDL_Surface *shot = SDL_RenderReadPixels(sdl->renderer, nullptr);
+  if (!shot) {
+    SDL_Log("Cannot capture");
+  } else {
+    SDL_SaveBMP(shot, "test_render.bmp");
+  }
+#endif
   return SDL_APP_CONTINUE;
 }
 

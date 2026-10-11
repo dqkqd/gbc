@@ -28,7 +28,10 @@ jobs:
           sudo apt-get install -y clang-tidy-21
       - name: generate compile database
         run: |
-          cmake -B build -DGB_TEST=ON
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxext-dev libxcursor-dev libxi-dev \
+             libxfixes-dev libxrandr-dev libxrender-dev libxss-dev libxtst-dev
+          cmake -B build -DGB_TEST=ON -DGB_RENDER_TEST=ON
           cp build/compile_commands.json .
       - name: tidy
         run: clang-tidy-21 $(git ls-files '*.c' '*.h')
@@ -42,6 +45,9 @@ jobs:
           submodules: recursive
       - name: prepare
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxext-dev libxcursor-dev libxi-dev \
+             libxfixes-dev libxrandr-dev libxrender-dev libxss-dev libxtst-dev
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DGB_TEST=ON
           cmake --build build --target gb
           mkdir -p logs
@@ -63,3 +69,22 @@ jobs:
           run_test './tests/gb-test-roms/cpu_instrs/individual/09-op r,r.gb' 9 6
           run_test './tests/gb-test-roms/cpu_instrs/individual/10-bit ops.gb' 10 7
           run_test './tests/gb-test-roms/cpu_instrs/individual/11-op a,(hl).gb' 11 10
+  render_test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: prepare
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxext-dev libxcursor-dev libxi-dev \
+             libxfixes-dev libxrandr-dev libxrender-dev libxss-dev libxtst-dev
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGB_RENDER_TEST=ON
+          cmake --build build --target gb
+
+          curl -L -o dmg-acid2.gb https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb
+      - name: render tests
+        run: |
+          timeout --signal=SIGINT 3 ./build/gb ./dmg-acid2.gb
+          diff <(magick test_render.bmp rgb:-) <(magick tests/test_render.bmp rgb:-)

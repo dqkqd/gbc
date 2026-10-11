@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <sys/types.h>
 
 #include "SDL3/SDL_init.h"
 #include "constant.h"

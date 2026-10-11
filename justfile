@@ -3,7 +3,7 @@ build:
     cmake --build build --target gb
 
 compile_json:
-    cmake -B build_debug -DCMAKE_BUILD_TYPE=Debug -DGB_TEST=ON
+    cmake -B build_debug -DCMAKE_BUILD_TYPE=Debug -DGB_TEST=ON -DGB_RENDER_TEST=ON
     cp build_debug/compile_commands.json .
 
 format:
@@ -34,13 +34,6 @@ build_test:
     cmake -B build_test -DCMAKE_BUILD_TYPE=Release -DGB_TEST=ON
     cmake --build build_test --target gb
 
-gen_opcode:
-    uv run ./codegen/gen.py
-
-test_render: build
-    [ -f dmg-acid2.gb ] || curl -L -o dmg-acid2.gb https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb
-    ./build/gb ./dmg-acid2.gb
-
 test path num time: build_test
     timeout --signal=SIGINT {{ time }} ./build_test/gb '{{ path }}' || true
     uv run tests/gameboy-doctor/gameboy-doctor ./logs/gameboy_doctor.log cpu_instrs {{ num }}
@@ -58,3 +51,11 @@ test10: (test './tests/gb-test-roms/cpu_instrs/individual/10-bit ops.gb' '10' '7
 test11: (test './tests/gb-test-roms/cpu_instrs/individual/11-op a,(hl).gb' '11' '10') # passed
 
 test_all: test01 test02 test03 test04 test05 test06 test07 test08 test09 test10 test11
+
+build_render:
+    cmake -B build_test -DCMAKE_BUILD_TYPE=Release -DGB_RENDER_TEST=ON
+    cmake --build build_test --target gb
+
+test_render: build_render
+    [ -f dmg-acid2.gb ] || curl -L -o dmg-acid2.gb https://github.com/mattcurrie/dmg-acid2/releases/download/v1.0/dmg-acid2.gb
+    ./build/gb ./dmg-acid2.gb
