@@ -6,20 +6,8 @@
 #include "constant.h"
 #include "mem.h"
 #include "ppu/color.h"
+#include "ppu/oam.h"
 #include "ppu/sdl.h"
-#include "tile.h"
-
-typedef struct {
-  int off_y;     // the relative offset y according to the tile location
-  int x;         // the actual x on the screen
-  uint8_t flags; // the objet flags
-  Tile tile;     // the tile data
-} Object;
-
-typedef struct {
-  int n_objects;
-  Object object_buffer[OAM_MAX_OBJECTS];
-} PpuOAMScanResult;
 
 typedef struct {
   bool running;
