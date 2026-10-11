@@ -1,5 +1,7 @@
-# A Game Boy emulator in C
+# A (toy) Game Boy emulator in C
 
-## The render test
+## Tests
+
+### Render
 
 ![rendertest-result](assets/rendertest-result.png)
