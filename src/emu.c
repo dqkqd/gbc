@@ -4194,6 +4194,9 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
 [[nodiscard]]
 bool tick(Emu *emu, int t_cycle) {
   mem_tick(&emu->mem, t_cycle);
+#ifdef GB_TEST
+  return true;
+#endif
   return ppu_step(&emu->ppu, t_cycle);
 }
 

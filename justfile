@@ -28,10 +28,11 @@ run_debug path:
 clean:
     rm -rf build
     rm -rf build_debug
+    rm -rf build_test
 
 build_test:
-    cmake -B build -DCMAKE_BUILD_TYPE=Release -DGB_TEST=ON
-    cmake --build build --target gb
+    cmake -B build_test -DCMAKE_BUILD_TYPE=Release -DGB_TEST=ON
+    cmake --build build_test --target gb
 
 gen_opcode:
     uv run ./codegen/gen.py
@@ -41,7 +42,7 @@ test_render: build
     ./build/gb ./dmg-acid2.gb
 
 test path num time: build_test
-    timeout --signal=SIGINT {{ time }} ./build/gb '{{ path }}' || true
+    timeout --signal=SIGINT {{ time }} ./build_test/gb '{{ path }}' || true
     uv run tests/gameboy-doctor/gameboy-doctor ./logs/gameboy_doctor.log cpu_instrs {{ num }}
 
 test01: (test './tests/gb-test-roms/cpu_instrs/individual/01-special.gb' '1' '2') # passed

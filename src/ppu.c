@@ -21,6 +21,7 @@ void ppu_init(Ppu *ppu, Mem *mem) {
   ppu->dots = 0;
   ppu->mode = PPU_MODE_START;
   ppu->scanline = 0;
+  ppu->win_y = 0;
   ppu->win_y_condition = false;
 
   // init ly for scanline 0
@@ -67,6 +68,7 @@ void ppu_enter_mode(Ppu *ppu, PpuMode mode) {
   }
   case PPU_MODE_VBLANK: {
     ppu->win_y_condition = false;
+    ppu->win_y = 0;
     request_interrupt(ppu->mem, I_VBLANK_FLAG);
     break;
   }
@@ -103,6 +105,7 @@ bool ppu_step(Ppu *ppu, int t_cycle) {
   if ((lcdc & LCDC_PPU_ENABLED_FLAG) == 0) {
     ppu->dots = 0;
     ppu->scanline = 0;
+    ppu->win_y = 0;
     ppu->win_y_condition = false;
 
     uint8_t *ly = mem_ref_u8(ppu->mem, LCD_LY_ADDR);
@@ -185,7 +188,7 @@ typedef enum {
 } UseColor;
 
 [[nodiscard]]
-UseColor ppu_get_object_color_index(const Ppu *ppu, int x, ColorIndex *ci,
+UseColor ppu_get_object_color_index(Ppu *ppu, int x, ColorIndex *ci,
                                     Palette *obj0_palette,
                                     Palette *obj1_palette, bool *prefer_bg) {
   // go through the collided objects in the scan line
@@ -222,8 +225,8 @@ UseColor ppu_get_object_color_index(const Ppu *ppu, int x, ColorIndex *ci,
 }
 
 [[nodiscard]]
-UseColor ppu_get_bg_win_color_index(const Ppu *ppu, uint8_t lcdc, int x, int wx,
-                                    int wy, int scx, int scy, ColorIndex *ci,
+UseColor ppu_get_bg_win_color_index(Ppu *ppu, uint8_t lcdc, int x, int wx,
+                                    int scx, int scy, ColorIndex *ci,
                                     Palette *bgp_palette) {
   // BG and window is not enabled
   if ((lcdc & LCDC_BG_WIN_ENABLED_FLAG) == 0) {
@@ -239,7 +242,7 @@ UseColor ppu_get_bg_win_color_index(const Ppu *ppu, uint8_t lcdc, int x, int wx,
     tile_map_area_addr =
         lcdc & LCDC_WIN_TILE_MAP_AREA_FLAG ? TILE_MAP1_ADDR : TILE_MAP0_ADDR;
     x -= wx;
-    y = ppu->scanline - wy;
+    y = ppu->win_y;
   } else {
     // background
     tile_map_area_addr =
@@ -276,7 +279,6 @@ void ppu_draw(Ppu *ppu) {
 
   uint8_t lcdc = mem_read_u8(ppu->mem, LCDC_ADDR);
   int wx = mem_read_u8(ppu->mem, LCD_WIN_WX_ADDR);
-  int wy = mem_read_u8(ppu->mem, LCD_WIN_WY_ADDR);
   wx -= 7;
 
   int scx = mem_read_u8(ppu->mem, LCD_BG_SCX_ADDR);
@@ -296,11 +298,11 @@ void ppu_draw(Ppu *ppu) {
     // - we only use background color: fetch it
     // - we prefer color index 1-3 from background color, **try** to fetch it!
     if (use_color != USE_OBJ_COLOR) {
-      use_color = ppu_get_bg_win_color_index(ppu, lcdc, x, wx, wy, scx, scy,
+      use_color = ppu_get_bg_win_color_index(ppu, lcdc, x, wx, scx, scy,
                                              &bgp_ci, &bgp_palette);
     } else if (prefer_bg) {
       UseColor use_bg_color = ppu_get_bg_win_color_index(
-          ppu, lcdc, x, wx, wy, scx, scy, &bgp_ci, &bgp_palette);
+          ppu, lcdc, x, wx, scx, scy, &bgp_ci, &bgp_palette);
       // we only use color from background color if the index is 1-3
       // https://gbdev.io/pandocs/OAM.html#byte-3--attributesflags
       if (use_bg_color == USE_BGP_COLOR && bgp_ci.index != 0) {
@@ -321,5 +323,13 @@ void ppu_draw(Ppu *ppu) {
       *color = COLOR_WHITE;
       break;
     }
+  }
+
+  // increment window counter in this scanline
+  // BG and window is not enabled
+  if ((lcdc & LCDC_BG_WIN_ENABLED_FLAG) != 0 &&
+      (lcdc & LCDC_WIN_ENABLED_FLAG) != 0 && (int)ppu->win_y_condition &&
+      0 <= wx && wx < WINDOW_WIDTH) {
+    ppu->win_y++;
   }
 }

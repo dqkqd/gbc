@@ -1,8 +1,6 @@
 #ifndef PPU_H
 #define PPU_H
 
-#include <stdint.h>
-
 #include "constant.h"
 #include "mem.h"
 #include "ppu/color.h"
@@ -25,6 +23,7 @@ typedef struct {
   PpuMode mode;
   int scanline;                     // 0 - 153
   PpuOAMScanResult oam_scan_result; // temporary oam scan result
+  int win_y;
   bool win_y_condition;
   // colors to render
   Color colors[WINDOW_WIDTH * WINDOW_HEIGHT];
