@@ -85,12 +85,16 @@ void mem_tick(Mem *mem, uint8_t t_state_cycle) {
 
       // overflow case, enable interrupt and set *tima to the correct vlaue
       if (*tima == 0xFF) {
-        uint8_t *if_ = mem_ref_u8(mem, IF_ADDR);
-        *if_ |= I_TIMER_FLAG;
+        request_interrupt(mem, I_TIMER_FLAG);
         *tima = mem_read_u8(mem, TMA_ADDR);
       } else {
         *tima = *tima + 1;
       }
     }
   }
+}
+
+void request_interrupt(Mem *mem, int flag) {
+  uint8_t *if_ = mem_ref_u8(mem, IF_ADDR);
+  *if_ |= flag;
 }

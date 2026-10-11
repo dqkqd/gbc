@@ -4191,18 +4191,22 @@ uint8_t execute(Emu *emu, const Opcode *const opcode) { // NOLINT
   return 4;
 }
 
+[[nodiscard]]
+bool tick(Emu *emu, int t_cycle) {
+  mem_tick(&emu->mem, t_cycle);
+  return ppu_step(&emu->ppu, t_cycle);
+}
+
 void emu_loop(Emu *emu) {
   Opcode opcode;
   uint8_t cycle;
 
   while (true) {
-    if (!ppu_step(&emu->ppu)) {
-      return;
-    }
-
     // halt!
     if ((int)emu->cpu.halted && !cpu_has_interrupt_pending(&emu->mem)) {
-      mem_tick(&emu->mem, 4);
+      if (!tick(emu, 4)) {
+        return;
+      }
       continue;
     }
     emu->cpu.halted = false;
@@ -4210,7 +4214,9 @@ void emu_loop(Emu *emu) {
     GAMEBOY_DOCTOR(emu);
 
     cycle = cpu_interrupt(&emu->cpu, &emu->mem);
-    mem_tick(&emu->mem, cycle);
+    if (!tick(emu, cycle)) {
+      return;
+    }
 
     if (emu->cpu.ei_waiting) {
       emu->cpu.ei_waiting = false;
@@ -4222,7 +4228,9 @@ void emu_loop(Emu *emu) {
     cycle = execute(emu, &opcode);
     // not halt, normal tick
     if (!emu->cpu.halted) {
-      mem_tick(&emu->mem, cycle);
+      if (!tick(emu, cycle)) {
+        return;
+      }
     }
   }
 }

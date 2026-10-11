@@ -18,14 +18,63 @@ void ppu_init(Ppu *ppu, Mem *mem) {
     exit(1);
   };
   ppu->mem = mem;
-  ppu->mode = PPU_MODE_OAM;
+  ppu->mode = PPU_MODE_START;
   ppu->scanline = 0;
   ppu->win_y_condition = false;
 }
 
 void ppu_destroy(Ppu *ppu) { sdl_quit(&ppu->sdl); }
 
-bool ppu_step(Ppu *ppu) {
+PpuMode get_ppu_mode(int dots, int scanline) {
+  if (scanline >= SCAN_LINE_VBLANK_START) {
+    return PPU_MODE_VBLANK;
+  }
+  if (dots < MODE_OAM_END_DOT) {
+    return PPU_MODE_OAM;
+  }
+  if (dots < MODE_DRAW_END_DOT) {
+    return PPU_MODE_DRAW;
+  }
+  return PPU_MODE_HBLANK;
+}
+
+void ppu_enter_mode(Ppu *ppu, PpuMode mode) {
+  uint8_t *stat = mem_ref_u8(ppu->mem, LCD_STAT_ADDR);
+  *stat = (*stat & 0xFC) | (mode & 0x03);
+
+  // check interrupt for ppu mode
+  if (((*stat & LCD_STAT_MODE_0_SELECT_FLAG) != 0 &&
+       ppu->mode == PPU_MODE_HBLANK) ||
+      ((*stat & LCD_STAT_MODE_1_SELECT_FLAG) != 0 &&
+       ppu->mode == PPU_MODE_VBLANK) ||
+      ((*stat & LCD_STAT_MODE_2_SELECT_FLAG) != 0 &&
+       ppu->mode == PPU_MODE_OAM)) {
+    request_interrupt(ppu->mem, I_LCD_FLAG);
+  }
+
+  switch (mode) {
+  case PPU_MODE_OAM: {
+    ppu_oam_scan(ppu);
+    break;
+  }
+  case PPU_MODE_DRAW: {
+    ppu_draw_line_pixels(ppu);
+    break;
+  }
+  case PPU_MODE_HBLANK: {
+    break;
+  }
+  case PPU_MODE_VBLANK: {
+    ppu->win_y_condition = false;
+    request_interrupt(ppu->mem, I_VBLANK_FLAG);
+    break;
+  }
+  case PPU_MODE_START:
+    FATAL("Invalid mode");
+  }
+}
+
+void ppu_update_ly(Ppu *ppu) {
   uint8_t *stat = mem_ref_u8(ppu->mem, LCD_STAT_ADDR);
   uint8_t *ly = mem_ref_u8(ppu->mem, LCD_LY_ADDR);
   uint8_t lyc = mem_read_u8(ppu->mem, LCD_LYC_ADDR);
@@ -34,6 +83,10 @@ bool ppu_step(Ppu *ppu) {
 
   if (*ly == lyc) {
     *stat |= LCD_STAT_LYC_EQ_LY_FLAG;
+    if ((*stat & LCD_STAT_LYC_SELECT_FLAG) != 0 &&
+        (*stat & LCD_STAT_LYC_EQ_LY_FLAG) != 0) {
+      request_interrupt(ppu->mem, I_LCD_FLAG);
+    }
   } else {
     *stat &= ~LCD_STAT_LYC_EQ_LY_FLAG;
   }
@@ -42,74 +95,35 @@ bool ppu_step(Ppu *ppu) {
   if (*ly == wy) {
     ppu->win_y_condition = true;
   }
+}
 
-  *stat = (*stat & 0xFC) | (ppu->mode & 0x03);
+bool ppu_step(Ppu *ppu, int t_cycle) {
+  ppu->dots += t_cycle;
 
-  // check interrupt
-  if (((*stat & LCD_STAT_MODE_0_SELECT_FLAG) != 0 && ppu->mode == 0) ||
-      ((*stat & LCD_STAT_MODE_1_SELECT_FLAG) != 0 && ppu->mode == 1) ||
-      ((*stat & LCD_STAT_MODE_2_SELECT_FLAG) != 0 && ppu->mode == 2) ||
-      ((*stat & LCD_STAT_LYC_SELECT_FLAG) != 0 &&
-       (*stat & LCD_STAT_LYC_EQ_LY_FLAG) != 0)) {
-    uint8_t *if_ = mem_ref_u8(ppu->mem, IF_ADDR);
-    *if_ |= I_LCD_FLAG;
-  }
-
-  switch (ppu->mode) {
-  case PPU_MODE_OAM: {
-    ppu_oam_scan(ppu);
-    ppu->mode = PPU_MODE_DRAW;
-    break;
-  }
-  case PPU_MODE_DRAW: {
-    ppu_draw_line_pixels(ppu);
-    ppu->mode = PPU_MODE_HBLANK;
-    break;
-  }
-  case PPU_MODE_HBLANK: {
-    if (ppu->scanline == 143) {
-      // vertical blank, set it once!
-      uint8_t *if_ = mem_ref_u8(ppu->mem, IF_ADDR);
-      *if_ |= I_VBLANK_FLAG;
-      ppu->win_y_condition = false;
-      ppu->mode = PPU_MODE_VBLANK;
-    } else {
-      ppu->mode = PPU_MODE_OAM;
-    }
+  if (ppu->dots >= PPU_DOTS_PER_LINE) {
+    ppu->dots -= PPU_DOTS_PER_LINE;
     ppu->scanline++;
-    break;
-  }
-  case PPU_MODE_VBLANK: {
-    ppu->scanline++;
-    if (ppu->scanline > SCAN_LINE_END) {
-      // TODO(khanhdq): this shouldn't be here, it should be after mode 3
+    if (ppu->scanline >= SCAN_LINE_COUNT) {
+      ppu->scanline = 0;
       if (!ppu_render(ppu)) {
         return false;
       }
-      ppu_render_clear(ppu);
-      ppu->scanline = 0;
-      ppu->mode = PPU_MODE_OAM;
     }
-    break;
+    ppu_update_ly(ppu);
   }
-  default: {
-    FATAL("Invalid ppu mode %d", ppu->mode);
-  }
+
+  PpuMode mode = get_ppu_mode(ppu->dots, ppu->scanline);
+  if (mode != ppu->mode) {
+    ppu_enter_mode(ppu, mode);
+    ppu->mode = mode;
   }
 
   return true;
 }
 
-void ppu_render_clear(Ppu *ppu) {
-  for (int y = 0; y < WINDOW_HEIGHT; y++) {
-    for (int x = 0; x < WINDOW_WIDTH; x++) {
-      ppu->colors[(y * WINDOW_WIDTH) + x] = COLOR_WHITE;
-    }
-  }
-  sdl_render_clear(&ppu->sdl);
-}
-
 bool ppu_render(Ppu *ppu) {
+  sdl_render_clear(&ppu->sdl);
+
   // put all colors
   for (int y = 0; y < WINDOW_HEIGHT; y++) {
     for (int x = 0; x < WINDOW_WIDTH; x++) {
@@ -149,11 +163,6 @@ void ppu_oam_scan(Ppu *ppu) {
     }
   }
 
-  if (ppu->oam_scan_result.n_objects > 0) {
-    DEBUG("Scan line %d: Got %d objects", ppu->scanline,
-          ppu->oam_scan_result.n_objects);
-  }
-
   oam_sort(ppu->oam_scan_result.object_buffer, ppu->oam_scan_result.n_objects);
 }
 
@@ -186,7 +195,8 @@ UseColor ppu_get_object_color_index(const Ppu *ppu, int x, ColorIndex *ci,
         *ci = tile_color_index(&obj->tile, off_x, obj->off_y, obj1_palette);
       }
 
-      // if the color index is 0, then this is transparent color, do not use it!
+      // if the color index is 0, then this is transparent color, do not use
+      // it!
       if (ci->index == 0) {
         continue;
       }
@@ -269,8 +279,8 @@ void ppu_draw_line_pixels(Ppu *ppu) {
     UseColor use_color = ppu_get_object_color_index(
         ppu, x, &obj_ci, &obj0_palette, &obj1_palette, &prefer_bg);
 
-    // if we don't use object color then we need to fetch color from background
-    // There are 2 cases:
+    // if we don't use object color then we need to fetch color from
+    // background There are 2 cases:
     // - we only use background color: fetch it
     // - we prefer color index 1-3 from background color, **try** to fetch it!
     if (use_color != USE_OBJ_COLOR) {

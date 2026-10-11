@@ -10,16 +10,18 @@
 #include "ppu/sdl.h"
 
 typedef enum {
-  PPU_MODE_OAM,
-  PPU_MODE_DRAW,
-  PPU_MODE_HBLANK,
-  PPU_MODE_VBLANK,
+  PPU_MODE_START,  // undefined
+  PPU_MODE_OAM,    // mode 2
+  PPU_MODE_DRAW,   // mode 3
+  PPU_MODE_HBLANK, // mode 0
+  PPU_MODE_VBLANK, // mode 1
 } PpuMode;
 
 typedef struct {
   Mem *mem;
   SdlWrapper sdl;
 
+  int dots;
   PpuMode mode;
   int scanline;                     // 0 - 153
   PpuOAMScanResult oam_scan_result; // temporary oam scan result
@@ -32,9 +34,8 @@ void ppu_init(Ppu *ppu, Mem *mem);
 void ppu_destroy(Ppu *ppu);
 
 // step the ppu
-[[nodiscard]] bool ppu_step(Ppu *ppu);
+[[nodiscard]] bool ppu_step(Ppu *ppu, int t_cycle);
 
-void ppu_render_clear(Ppu *ppu);
 [[nodiscard]] bool ppu_render(Ppu *ppu);
 
 void ppu_put_color(const Ppu *ppu, int x, int y, Color *color);
