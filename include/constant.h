@@ -1,20 +1,9 @@
 #ifndef CONSTANT_H
 #define CONSTANT_H
 
-#include <stdint.h>
-
-typedef struct {
-  uint8_t r, g, b;
-} Color;
-
-static const Color COLOR_WHITE = {255, 255, 255};
-
-static const Color color_mapping[4] = {
-    {255, 255, 255},
-    {170, 170, 170},
-    {85, 85, 85},
-    {0, 0, 0},
-};
+#define COLOR_PALETTE_BGP_ADDR 0xFF47
+#define COLOR_PALETTE_OBJ0_ADDR 0xFF48
+#define COLOR_PALETTE_OBJ1_ADDR 0xFF49
 
 #define WINDOW_HEIGHT 144
 #define WINDOW_WIDTH 160

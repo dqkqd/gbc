@@ -5,6 +5,7 @@
 
 #include "constant.h"
 #include "mem.h"
+#include "ppu/color.h"
 #include "ppu/sdl.h"
 #include "tile.h"
 
