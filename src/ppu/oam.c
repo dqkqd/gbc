@@ -1,7 +1,9 @@
 #include "ppu/oam.h"
 
 bool oam_get_obj(const Mem *mem, const uint8_t *oam_ptr, Object *obj,
-                 int scanning_line, int object_size) {
+                 int oam_index, int scanning_line, int object_size) {
+  obj->oam_index = oam_index;
+
   // Byte 0: Y position
   int y = *oam_ptr;
 
@@ -66,7 +68,8 @@ int partition(Object *obj, int lo, int hi) {
   Object tmp;
   Object *cur;
   for (cur = obj + lo; cur < obj + hi; cur++) {
-    if (cur->x <= pivot->x) {
+    if (cur->x < pivot->x ||
+        (cur->x == pivot->x && cur->oam_index < pivot->oam_index)) {
       // swap cur with obj[i];
       tmp = *cur;
       *cur = obj[i];

@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 typedef struct {
+  int oam_index; // the position in the oam index, for sort tiebreaker
   int off_y;     // the relative offset y according to the tile location
   int x;         // the actual x on the screen
   uint8_t flags; // the object flags
@@ -22,7 +23,7 @@ typedef struct {
  */
 [[nodiscard]]
 bool oam_get_obj(const Mem *mem, const uint8_t *oam_ptr, Object *obj,
-                 int scanning_line, int object_size);
+                 int oam_index, int scanning_line, int object_size);
 
 void oam_sort(Object *obj, int n);
 
