@@ -121,11 +121,7 @@ bool ppu_render(Ppu *ppu) {
   }
 
   // show scan result on the screen
-  if (sdl_render(&ppu->sdl) == SDL_APP_SUCCESS) {
-    ppu_destroy(ppu);
-    return false;
-  }
-  return true;
+  return sdl_render(&ppu->sdl) == SDL_APP_CONTINUE;
 }
 
 void ppu_put_color(const Ppu *ppu, int x, int y, Color *color) {
